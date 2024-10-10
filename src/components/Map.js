@@ -141,16 +141,15 @@ const Map = ({ listings }) => {
         )}
       </div>
       <div
-        className="fixed bottom-0 left-1/2 transform top-40 -translate-x-1/2 w-[95%] bg-gray-200 z-50 overflow-hidden rounded-t-lg"
+        className="fixed bottom-0 left-1/2 transform h-14 -translate-x-1/2 w-[95%] bg-gray-200 z-50 overflow-hidden rounded-t-lg"
         style={{ height: `${relatedFileHeight}px` }}
       >
         <div
-          className="cursor-ns-resize h-4"
+          className="cursor-ns-resize h-full"
           onMouseDown={handleMouseDown}
         ></div>
         <RelatedFile />
       </div>
-      ;
     </>
   );
 };
