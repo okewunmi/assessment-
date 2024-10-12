@@ -1,14 +1,13 @@
 "use client";
-import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
+import { GoogleMap, useLoadScript } from "@react-google-maps/api";
 import MarkerComponent from "./Marker";
 import { useState } from "react";
-import ListingDetails from "./ListingDetails";
 import { IoClose, IoHeartOutline, IoHeart } from "react-icons/io5";
-import RelatedFile from "./related";
+import Related from "./Related";
 
 const mapContainerStyle = {
   width: "100vw",
-  height: "86vh",
+  height: "89.8vh",
 };
 
 const center = {
@@ -21,32 +20,10 @@ const Map = ({ listings }) => {
     googleMapsApiKey: "AIzaSyDKqPU_I4U0CDznIotEnvx5WHu7B86YDkQ", // Store your API key in env
   });
 
-  const [isVisible, setIsVisible] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [relatedFileHeight, setRelatedFileHeight] = useState(50); // Initial height of RelatedFile (in px)
-
-  // Handle the resizing logic for RelatedFile when dragged
-  const handleMouseDown = (e) => {
-    const startY = e.clientY;
-
-    const onMouseMove = (moveEvent) => {
-      const currentY = moveEvent.clientY;
-      const heightDelta = startY - currentY;
-      const newHeight = Math.min(
-        Math.max(50, relatedFileHeight + heightDelta),
-        window.innerHeight * 0.8
-      ); // Limit between 50px and 80vh
-      setRelatedFileHeight(newHeight);
-    };
-
-    const onMouseUp = () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-  };
+  const [selectedListing, setSelectedListing] = useState(null);
+  const [dragging, setDragging] = useState(false); // Track drag state
 
   const handleClose = () => {
     setSelectedListing(null);
@@ -56,10 +33,36 @@ const Map = ({ listings }) => {
     setIsBookmarked(!isBookmarked);
   };
 
-  const [selectedListing, setSelectedListing] = useState(null);
+  // Draggable component logic
+  const handleMouseDown = (e) => {
+    setDragging(true);
+    const startY = e.clientY;
+
+    const onMouseMove = (moveEvent) => {
+      if (dragging) {
+        const currentY = moveEvent.clientY;
+        const heightDelta = startY - currentY;
+        const newHeight = Math.min(
+          Math.max(50, relatedFileHeight + heightDelta),
+          window.innerHeight * 0.9 // Drag up to 90% of the viewport height
+        );
+        setRelatedFileHeight(newHeight);
+      }
+    };
+
+    const onMouseUp = () => {
+      setDragging(false);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
 
   if (loadError) return <div>Error loading maps</div>;
   if (!isLoaded) return <div>Loading Maps</div>;
+
   return (
     <>
       <div>
@@ -80,12 +83,12 @@ const Map = ({ listings }) => {
         </GoogleMap>
 
         {selectedListing && (
-          <div className=" md:w-96 w-[90vw] absolute bottom-5 left-5 bg-white rounded-lg shadow-md z-50 text-black p-4 max-w-full">
+          <div className=" md:w-96 w-[85vw] absolute bottom-20 left-5 bg-white rounded-lg shadow-md z-150 text-black p-4 max-w-full">
             <div className="relative">
               <img
                 src={selectedListing.image}
                 alt={selectedListing.name}
-                className="w-full h-48 object-cover rounded-t-lg"
+                className="w-full h-40 object-cover rounded-t-lg"
               />
 
               <div className="absolute top-3 right-3 flex space-x-2">
@@ -140,15 +143,41 @@ const Map = ({ listings }) => {
           </div>
         )}
       </div>
+
+      {/* Draggable component */}
       <div
-        className="fixed bottom-0 left-1/2 transform h-14 -translate-x-1/2 w-[98%] bg-gray-200 z-50 overflow-hidden rounded-t-lg"
-        style={{ height: `${relatedFileHeight}px` }}
+        className="fixed bottom-0 px-5 left-1/2 transform h-20 -translate-x-1/2 w-[99%] bg-white z-50 rounded-t-3xl overflow-hidden overflow-y-auto md:hidden"
+        style={{
+          height: `${relatedFileHeight}px`,
+          transition: dragging ? "none" : "height 0.3s ease", // Animate height when not dragging
+        }}
       >
+        {/* Drag handle */}
         <div
-          className="cursor-ns-resize h-full"
+          className="cursor-ns-resize h-5 pb-16 "
           onMouseDown={handleMouseDown}
-        ></div>
-        <RelatedFile className="bg-inherit" />
+        >
+          <div className="flex flex-col justify-center items-center mt-3 ">
+            <div className="bg-gray-300 w-12 h-1 rounded-full mb-4" />
+            <p className="text-lg font-bold text-black">Over 1,000 places</p>
+          </div>
+        </div>
+
+        {/* Imported component inside the draggable area */}
+        <div className="  flex pb-10 flex-col justify-center items-center gap-8 px-3">
+          <div className="flex border border-slate-400 rounded-2xl h-20 w-full items-center justify-between py-3 px-4">
+            <div className="  text-lg font-normal">
+              <p className=" text-black">Display total price</p>
+              <p className="  text-gray-400">Include all fees,before taxes</p>
+            </div>
+            <div className="bg-black rounded-3xl h-8 w-14">
+              <div className="bg-white h-8 w-8 rounded-full border-2 border-black"></div>
+            </div>
+          </div>
+          {listings.map((item, index) => (
+            <Related key={index} item={item} />
+          ))}
+        </div>
       </div>
     </>
   );
